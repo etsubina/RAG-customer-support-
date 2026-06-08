@@ -1,0 +1,526 @@
+{
+  "name": "RAG Support",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        -80
+      ],
+      "id": "9944b1e6-3d15-4f0b-849e-d4aebca4c1d0",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "QQk9lDZQAa1paIrL",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "10xajzntMZvFJ3VXeUu39i9gKYdfnz040",
+          "mode": "list",
+          "cachedResultName": "lalan",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/10xajzntMZvFJ3VXeUu39i9gKYdfnz040"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -80
+      ],
+      "id": "01e42b65-5bee-451b-87f5-d8f3fc7359dd",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "QQk9lDZQAa1paIrL",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "demo",
+          "mode": "list",
+          "cachedResultName": "demo"
+        },
+        "options": {
+          "pineconeNamespace": "lalan"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        -80
+      ],
+      "id": "5eafe377-72a4-454c-b4f4-aa570926e23b",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "vCj1SgT5EUy5GJxM",
+          "name": "Pinecone account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 512
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        80
+      ],
+      "id": "b30dc91d-ddc6-457b-871d-e760ac642300",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "cdXceEGSeMHFQIcQ",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        96
+      ],
+      "id": "cc84285e-9868-42bd-8879-98dabb0dcca4",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        176,
+        288
+      ],
+      "id": "ef82d8cb-63e2-451e-a4c1-c6e5ae95e280",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['What can i help you'] }}",
+        "options": {
+          "systemMessage": "=You are a professional assistant for Lalan Flower Delivery. Answer the user's question directly, clearly, and professionally using only the provided context. \n\nStrict Rules:\n- Do not mention technical backend details, database names, nodes, search results, or vector stores (e.g., never say \"Based on Pinecone search results\").\n- Do not include conversational filler, introductory phrases, or concluding customer service sign-offs (e.g., do not say \"Is there anything else I can help you with?\").\n- State the facts cleanly and naturally as an authoritative source of information.\n- CRITICAL: If the user's question is about refunds, returning flowers, or cancellations, do not attempt to answer it. Reply exactly with: \"TRANSFER_TO_HUMAN\" but they ask you to know about the policy just tell them the policy."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        864,
+        -80
+      ],
+      "id": "cb78745f-32e6-4e54-b014-d0b94772935c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-haiku",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        736,
+        128
+      ],
+      "id": "b3cdb47c-78d9-43bc-9f71-0aaac8ba0dea",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "pCn2YtR06nEUOeI5",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "call this to retrieve policy and FQA",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "demo",
+          "mode": "list",
+          "cachedResultName": "demo"
+        },
+        "options": {
+          "pineconeNamespace": "lalan"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        176
+      ],
+      "id": "dcb71356-4b14-43f1-9a6f-845f0730c3ea",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "vCj1SgT5EUy5GJxM",
+          "name": "Pinecone account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 512
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        336
+      ],
+      "id": "58c33805-198f-489f-9cc5-dab27a90611b",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "cdXceEGSeMHFQIcQ",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Customer Support ",
+        "formDescription": "Ask any thing",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "What can i help you"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        656,
+        -80
+      ],
+      "id": "5bb5b4cd-d312-4b6c-9531-d6e2153fbb86",
+      "name": "On form submission",
+      "webhookId": "21547c13-575c-47c7-ad2d-3dae1a353a52"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "Lalan flower ",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1168,
+        -80
+      ],
+      "id": "164e6d89-d166-4d79-aa2e-c0c0d7282250",
+      "name": "Send a message",
+      "webhookId": "bce8dce5-c738-44e0-a091-9ddd833493af",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9U9AsyqxzHb6SxnE",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "ticket",
+        "pipelineId": "0",
+        "stageId": "1",
+        "ticketName": "={{ $('On form submission').item.json['What can i help you'] }}",
+        "additionalFields": {
+          "associatedContactIds": "={{ [ $json.id ] }}",
+          "description": "={{ $('AI Agent').item.json.output }}"
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1584,
+        -80
+      ],
+      "id": "09d44ac2-44b0-46a6-bc02-f3b1f9dee97c",
+      "name": "Create a ticket",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "g4j60DUZMd4AGgo7",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "search",
+        "filterGroupsUi": {
+          "filterGroupsValues": [
+            {
+              "filtersUi": {
+                "filterValues": [
+                  {
+                    "propertyName": "email|string",
+                    "value": "={{ $('On form submission').item.json.Email }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        -80
+      ],
+      "id": "031111d1-3ce6-4734-a1bb-178e46a97301",
+      "name": "Search contacts",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "g4j60DUZMd4AGgo7",
+          "name": "HubSpot OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Document Processing & Vector Store Embedding\n",
+        "height": 688,
+        "width": 992,
+        "color": "#451212"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        -208
+      ],
+      "id": "2c3e77c6-7168-4dce-8d9c-ea6d20e1bcf8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Semantic Support Search, Gmail Reply & HubSpot Sync",
+        "height": 688,
+        "width": 1232,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -208
+      ],
+      "id": "61dfd6c2-fc12-49e6-90d6-390be48c5cd6",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader1",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Search contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a ticket": {
+      "main": [
+        []
+      ]
+    },
+    "Search contacts": {
+      "main": [
+        [
+          {
+            "node": "Create a ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cb5d10be-9cb4-4c23-8362-41f088e1b49d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1b9177eb5080210c33c19b9720fab0ddc681d26891c06435f6ff37d204d77c98"
+  },
+  "id": "wIlJ9kUdDX9two7A",
+  "tags": []
+}
